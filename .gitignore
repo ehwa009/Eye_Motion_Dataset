@@ -1,5 +1,4 @@
 videos/*.*
-*.txt
 *.ipynb
 clips/*.*
 facial_keypoints/*.*
