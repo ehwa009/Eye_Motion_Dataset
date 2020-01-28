@@ -16,6 +16,9 @@ def main():
     parser.add_argument('-vid_path', default='./videos')
     parser.add_argument('-facial_keypoints', default='./facial_keypoints')
     parser.add_argument('-model_path', default='./model/shape_predictor_68_face_landmarks.dat')
+    parser.add_argument('-width', default=960)
+    parser.add_argument('-height', default=540)
+    parser.add_argument('-frame_threshold', type=int, default=1000)
     opt = parser.parse_args()
 
     calibration = Calibration()
@@ -27,34 +30,49 @@ def main():
     print('[INFO] Total number of videos: {}'.format(str(len(videos))))
     
     for i, fp in tqdm(enumerate(sorted(videos, key=os.path.getmtime))):
-        sys.stdout.write('{}/{}'.format(i+1, str(len(videos))))
+        sys.stdout.write('\t{}/{}'.format(i+1, str(len(videos))))
         vid_name = os.path.split(fp)[1][-15:-4]
-        print('[INFO] Current Video: {}'.format(vid_name))
-
-        cap = cv2.VideoCapture(fp)
-
-        detector = dlib.get_frontal_face_detector()
-        predictor = dlib.shape_predictor(opt.model_path)
+        print('\n\tCurrent Video: {}'.format(vid_name))
         
-        all_keypoints = []
-        while (cap.isOpened()):
-            ret, frame = cap.read()
-            if ret:
-                # find and get facial keypoints on a single frame
-                facial_keypoints = get_landmark(frame, detector, predictor, calibration)
-                if facial_keypoints != []:
+        if not(os.path.exists('{}/{}.pickle'.format(opt.facial_keypoints, vid_name))):
+            cap = cv2.VideoCapture(fp)
+            detector = dlib.get_frontal_face_detector()
+            predictor = dlib.shape_predictor(opt.model_path)
+            
+            all_keypoints = []
+            num_frame = 0
+            while (cap.isOpened()):
+                ret, frame = cap.read()
+                if ret:
+                    frame = cv2.resize(frame, (opt.width, opt.height), interpolation=cv2.INTER_AREA)
+                    # find and get facial keypoints on a single frame
+                    facial_keypoints = get_landmark(frame, detector, predictor, calibration, opt)
+                    
+                    num_frame += 1
+                    if (num_frame > opt.frame_threshold) & (all_keypoints == [[0] * 50] * opt.frame_threshold):
+                        print('[INFO] There is no face detected. Delete the video and go to next video.')
+                        # delete uneccessary videos and subtitles
+                        os.remove('{}/{}.mp4'.format(opt.vid_path, vid_name))
+                        os.remove('{}/{}.vtt'.format(opt.vid_path, vid_name))
+                        break
+                                        
                     all_keypoints.append(facial_keypoints)
-                
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-            else:
-                break
-        
-        cap.release()
-        cv2.destroyAllWindows()
+                    
+                    cv2.imshow('frame', frame) # Display
 
-        with open('{}/{}.pickle'.format(opt.facial_keypoints, vid_name), 'wb') as f:
-            pickle.dump(all_keypoints, f)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+                else:
+                    break
+            
+            cap.release()
+            cv2.destroyAllWindows()
+
+            if len(all_keypoints) > 0:
+                with open('{}/{}.pickle'.format(opt.facial_keypoints, vid_name), 'wb') as f:
+                    pickle.dump(all_keypoints, f)
+                    print('[INFO] landmarks saved at {}.'.format(f))
+                    # exit(-1) # test purpose 
 
 
 def puplis_located(eye_left, eye_right):
@@ -67,28 +85,34 @@ def puplis_located(eye_left, eye_right):
     except Exception:
         return False
 
-
-def get_landmark(frame, detector, predictor, calibration):
+def get_landmark(frame, detector, predictor, calibration, opt):
+    '''
+    return:
+        0 ~ 3: pulpil left and right x y coordination
+        4 ~ 15: left eye region x y coordination
+        16 ~ 27: right eye region x y coordination
+        28 ~ 37: right eyebrow
+        38 ~ 47: left eyebrow 
+        48 ~ 49: center point
+    '''
     keypoints = []
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = detector(gray)
     
-    try:
+    if len(faces) < 1: # no face detected
+        return [0] * 50
+
+    else:
         face = faces[0]
         x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()
         
         landmarks = predictor(gray, face)
-        eye_left = Eye(gray, landmarks, 0, calibration)
-        eye_right = Eye(gray, landmarks, 1, calibration)
-        
-        # eye_left_x, eye_left_y, eye_right_x, eye_right_y = None, None, None, None
-        if puplis_located(eye_left, eye_right):
-            eye_left_x, eye_left_y = eye_left.origin[0] + eye_left.pupil.x, eye_left.origin[1] + eye_left.pupil.y
-            eye_right_x, eye_right_y = eye_right.origin[0] + eye_right.pupil.x, eye_right.origin[1] + eye_right.pupil.y
-            
-            # add pupil location
-            keypoints += [eye_left_x, eye_left_y, eye_right_x, eye_right_y]
+
+        # Bug fix
+        for idx in range(36, 48): 
+            if landmarks.part(idx).x < 100 or landmarks.part(idx).y < 100:
+                return [0] * 50
 
         # gaze detection
         left_eye_region = np.array([(landmarks.part(36).x, landmarks.part(36).y),
@@ -104,15 +128,34 @@ def get_landmark(frame, detector, predictor, calibration):
                                     (landmarks.part(45).x, landmarks.part(45).y),
                                     (landmarks.part(46).x, landmarks.part(46).y),
                                     (landmarks.part(47).x, landmarks.part(47).y)], np.int32)
+
+        # print(left_eye_region, right_eye_region)
+
+        eye_left = Eye(gray, landmarks, 0, calibration)
+        eye_right = Eye(gray, landmarks, 1, calibration)
+        
+        # eye_left_x, eye_left_y, eye_right_x, eye_right_y = None, None, None, None
+        if puplis_located(eye_left, eye_right):
+            eye_left_x, eye_left_y = eye_left.origin[0] + eye_left.pupil.x, eye_left.origin[1] + eye_left.pupil.y
+            eye_right_x, eye_right_y = eye_right.origin[0] + eye_right.pupil.x, eye_right.origin[1] + eye_right.pupil.y
+            
+            # add pupil location
+            keypoints += [int(eye_left_x), int(eye_left_y), int(eye_right_x), int(eye_right_y)]
+        else: # add default 
+            keypoints += [0, 0, 0, 0]
+
+
+
         # add eye regions
         for er in range(36, 48):
-            keypoints.append(landmarks.part(er).x)
-            keypoints.append(landmarks.part(er).y)
+            keypoints += [int(landmarks.part(er).x), int(landmarks.part(er).y)]
 
         # add eye brow:
         for eb in range(17, 27):
-            keypoints.append(landmarks.part(eb).x)
-            keypoints.append(landmarks.part(eb).y)
+            keypoints += [int(landmarks.part(eb).x), int(landmarks.part(eb).y)]
+
+        # add a center point
+        keypoints += [int(landmarks.part(27).x), int(landmarks.part(27).y)]
 
         min_x = np.min(left_eye_region[:, 0])
         max_x = np.max(left_eye_region[:, 0])
@@ -121,31 +164,24 @@ def get_landmark(frame, detector, predictor, calibration):
         
         ############################### Draw Components ###############################
         # draw face roi
-        # cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
         
         # draw eye
-        cv2.polylines(frame, [left_eye_region], True, (0, 0 , 255), 1)
-        cv2.polylines(frame, [right_eye_region], True, (0, 0 , 255), 1)
+        cv2.polylines(frame, [left_eye_region], True, (255, 255 , 255), 1)
+        cv2.polylines(frame, [right_eye_region], True, (255, 255, 255), 1)
         
         # draw pupils
         if puplis_located(eye_left, eye_right):
-            cv2.circle(frame, (eye_left_x, eye_left_y), 3, (0, 0, 255), -1)
-            cv2.circle(frame, (eye_right_x, eye_right_y), 3, (0, 0, 255), -1)
+            cv2.circle(frame, (eye_left_x, eye_left_y), 3, (255, 255, 255), -1)
+            cv2.circle(frame, (eye_right_x, eye_right_y), 3, (255, 255, 255), -1)
 
         # draw eye brow
         for n in range(17, 27):
             x = landmarks.part(n).x
             y = landmarks.part(n).y
-            cv2.circle(frame, (x, y), 2, (0, 0, 255), -1)
-        
-        # display eye region
-        # eye = frame[min_y:max_y, min_x:max_x]
-        # cv2.imshow('left_eye', eye)
-        cv2.imshow('video', frame)
+            cv2.circle(frame, (x, y), 1, (255, 255, 255), -1)
 
-    
-    except:
-        pass
+        cv2.circle(frame, (landmarks.part(27).x, landmarks.part(27).y), 2, (255, 0, 0), -1)
 
     return keypoints
 

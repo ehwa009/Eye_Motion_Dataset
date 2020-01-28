@@ -1,5 +1,6 @@
 videos/*.*
 *.ipynb
+*.txt
 clips/*.*
 facial_keypoints/*.*
 *.pyc

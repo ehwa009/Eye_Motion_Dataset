@@ -19,7 +19,7 @@ def main():
     parser.add_argument('-youtube_ch_id', default='UC_0NfufarVw04vDfWFm8z_Q')
     parser.add_argument('-max_result', default=50)
     parser.add_argument('-lang', default='en')
-    parser.add_argument('-dev_key', default='AIzaSyD6q4XP70nvWXr8CrBmZfet9Lh6TAIOmWM')
+    parser.add_argument('-dev_key', default='')
 
     # term option
     parser.add_argument('-search_year', type=int, default=2018)
@@ -87,10 +87,9 @@ def vid_download(vid_list, opt):
                 
                 if vid_filter(vid_info):
                     try:
-                        ydl.download([download_url])
-                    except (youtube_dl.utils.DownloadError,
-                            youtube_dl.utils.ContentTooShortError,
-                            youtube_dl.utils.ExtractorError):
+                        # ydl.download([download_url])
+                        print('PASS')
+                    except:
                         print('Error!')
                     else:
                         if vid_info.get('subtitles') != {} and vid_info.get('subtitles').get(opt.lang) != None:
@@ -99,7 +98,7 @@ def vid_download(vid_list, opt):
                             total_sub_count += 1
                         
                         if vid_info.get('automatic_captions') != {}:
-                            sub_url = vid_info.get('automatic_captions').get('en')[0].get('url')
+                            sub_url = vid_info.get('automatic_captions').get('en')[4].get('url') # 4th auto subtitle is vtt format
                             urllib.urlretrieve(sub_url, '{}{}.vtt'.format(opt.video_path, idx))
                             cap_sub_count += 1
                             total_sub_count += 1
