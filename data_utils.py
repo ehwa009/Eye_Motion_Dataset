@@ -199,7 +199,7 @@ class ClipFilter:
             return np.sqrt((x1-x2) ** 2 + (y1- y2) ** 2)
 
         for li, landmark in enumerate(self.landmarks):
-            
+            print('TEST')
 
     def is_correct_clip(self, ratio, threshold):
         if self.is_landmarks_missing(ratio):
