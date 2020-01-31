@@ -18,7 +18,7 @@ def main():
     parser.add_argument('-model_path', default='./model/shape_predictor_68_face_landmarks.dat')
     parser.add_argument('-width', default=960)
     parser.add_argument('-height', default=540)
-    parser.add_argument('-frame_threshold', type=int, default=1000)
+    parser.add_argument('-frame_threshold', type=int, default=300)
     opt = parser.parse_args()
 
     calibration = Calibration()
@@ -118,7 +118,7 @@ def get_landmark(frame, detector, predictor, calibration, opt):
         left_eye_region = np.array([(landmarks.part(36).x, landmarks.part(36).y),
                                     (landmarks.part(37).x, landmarks.part(37).y),
                                     (landmarks.part(38).x, landmarks.part(38).y),
-                                    (landmarks.part(39).x, landmarks.part(39).y),
+                                    (landmarks.part (39).x, landmarks.part(39).y),
                                     (landmarks.part(40).x, landmarks.part(40).y),
                                     (landmarks.part(41).x, landmarks.part(41).y)], np.int32)
         

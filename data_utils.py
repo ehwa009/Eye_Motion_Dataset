@@ -2,62 +2,96 @@ import cv2
 import pickle
 import math
 import glob
+import re, os
+import numpy as np
 
 from webvtt import WebVTT
 
-def load_clip_data(clip_path):
-    try:
-        with open(clip_path, 'rb') as cd:
-            clip_data = pickle.load(cd)
-            return clip_data
-    except FileNotFoundError:
-        return None
+
+class ClipWrapper:
+
+    def __init__(self, clip_path, vid_name):
+        self.clip_path = clip_path
+        self.vid_name = vid_name
+
+    def get_filtered_clip(self):
+        try:
+            with open('{}/{}-filtered.pickle'.format(self.clip_path, self.vid_name), 'rb') as cd:
+                clip_data = pickle.load(cd)
+                return clip_data
+        except FileNotFoundError:
+            return None
 
 
 class SubtitleWrapper:
 
-    def __init__(self, vid_path, vid_name, lang):
-        self.subtitle = []
+    def __init__(self, vid_path, vid_name, lang='en'):
         self.vid_path = vid_path
         self.vid_name = vid_name
         self.lang = lang
 
-    def load_auto_subtitle(self):
+    def get_subtitle(self):
+        subtitle = []
         sub_list = glob.glob('{}/{}.vtt'.format(self.vid_path, self.vid_name))
         if len(sub_list) > 1:
             print('[WARN] There are more than one subtitle.')
             assert False
         if len(sub_list) == 1:
             for i, sub_chunk in enumerate(WebVTT().read(sub_list[0])):
-                raw_sub = str(sub_chunk.raw_text)
-                if raw_sub.find('/n'):
-                    raw_sub = raw_sub.split('/n')
+                raw_sub = str(sub_chunk.raw_text)    
+                if raw_sub.find('\n'):
+                    raw_sub = raw_sub.split('\n')
+                else:
+                    raw_sub = [raw_sub]
 
+                sub_info = {}
+                sent = ''
+                for words_chunk in raw_sub:
+                    words = re.sub('[-\".]', '', words_chunk).split(' ')
+                    for word in words:
+                        sent += word
+                        sent += ' '
+
+                    sub_info['sent'] = sent.strip(' ')
+                    sub_info['start'] = sub_chunk.start_in_seconds
+                    sub_info['end'] = sub_chunk.end_in_seconds
+                
+                subtitle.append(sub_info)
+            return subtitle
+        else:
+            print('[ERROR] There is no subtitle file for {} video.'.format(self.vid_name))
+            return None
+                        
 
 class VideoWrapper:
 
-    def __init__(self, path, vid):
-        self.vid_path = '{}/{}.mp4'.format(path, vid)
-        
-        self.vid = cv2.VideoCapture(self.vid_path)
-        self.total_frame = int(self.vid.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.height = self.vid.get(cv2.CAP_PROP_FRAME_HEIGHT)
-        self.frame_rate = self.vid.get(cv2.CAP_PROP_FPS)
+    def __init__(self, vid_path, vid_name):
+
+        self.vid_path = vid_path
+        self.vid_name = vid_name
+                
+        # self.vid = cv2.VideoCapture(self.vid_path)
+        # self.total_frame = int(self.vid.get(cv2.CAP_PROP_FRAME_COUNT))
+        # self.height = self.vid.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        # self.frame_rate = self.vid.get(cv2.CAP_PROP_FPS)
 
     def get_vid(self):
-        return self.vid
+        vid_full_path = '{}/{}.mp4'.format(self.vid_path, self.vid_name)
+        if os.path.exists(vid_full_path):
+            return cv2.VideoCapture(vid_full_path)
+        else:
+            return None
 
 
 class LandmarkWrapper:
 
     def __init__(self, path, vid):
         pickle_file = '{}/{}.pickle'.format(path, vid)
-        
         with open(pickle_file, 'rb') as f:
-            self.skeletons = pickle.load(f)
+            self.landmarks = pickle.load(f)
 
     def get_landmarks(self, start_frame, end_frame, interval=1):
-        chunk = self.skeletons[start_frame:end_frame]
+        chunk = self.landmarks[start_frame:end_frame]
         if len(chunk) == 0:
             return []
         else:
@@ -69,21 +103,20 @@ class LandmarkWrapper:
 
 class ClipFilter:
 
-    def __init__(self, vid, start_frame, end_frame, landmarks, threshold):
+    def __init__(self, vid, start_frame, end_frame, landmarks):
         self.landmarks = landmarks
         self.start_frame = start_frame
         self.end_frame = end_frame
         self.scene_length = end_frame - start_frame
         self.vid = vid
-        self.threshold = threshold
 
-        self.filtering_result = [0, 0, 0, 0, 0, ] # [landmark_missing, picture, short, pupils, jittering, ]
+        self.filtering_result = [0, 0, 0, 0, 0, 0, ] # [landmark_missing, picture, short, pupils, jittering, small]
         self.debugging_info = [None, None, None, ] # [landmark_missing, picture, pupils, ]
         self.msg = ''
 
         self.min_scene_length = 30 * 3 # assume 30 fps
 
-    def is_landmarks_missing(self, threshold):
+    def is_landmarks_missing(self, ratio):
         n_incorrect_frame = 0
 
         if self.landmarks == []:
@@ -96,7 +129,7 @@ class ClipFilter:
         
         self.debugging_info[0] = round(n_incorrect_frame / self.scene_length, 3)
         
-        return n_incorrect_frame / self.scene_length > threshold
+        return n_incorrect_frame / self.scene_length > ratio
 
     def is_picture(self):
         sampling_interval = int(math.floor(self.scene_length / 5))
@@ -124,7 +157,7 @@ class ClipFilter:
     def is_too_short(self):
         return self.scene_length < self.min_scene_length
 
-    def is_pulpil_missing(self, threshold):
+    def is_pulpil_missing(self, ratio):
         n_incorrect_frame = 0
 
         for lm in self.landmarks:
@@ -134,7 +167,7 @@ class ClipFilter:
 
         self.debugging_info[2] = round(n_incorrect_frame / self.scene_length, 3)
 
-        return n_incorrect_frame / self.scene_length > threshold
+        return n_incorrect_frame / self.scene_length > ratio
 
     def is_too_large_jittering(self):
         sampling_interval = int(math.floor(self.scene_length / 5))
@@ -159,11 +192,17 @@ class ClipFilter:
 
         return diff > 100000000
 
-    def is_long_closed_eye(self):
-        pass
+    def is_landmarks_too_small(self, ratio, threshold):
+        n_incorrect_frame = 0
 
-    def is_correct_clip(self, threshold):
-        if self.is_landmarks_missing(threshold):
+        def get_dist(x1, y1, x2, y2):
+            return np.sqrt((x1-x2) ** 2 + (y1- y2) ** 2)
+
+        for li, landmark in enumerate(self.landmarks):
+            
+
+    def is_correct_clip(self, ratio, threshold):
+        if self.is_landmarks_missing(ratio):
             self.msg = 'There are too many missing landmarks.'
             return False
         self.filtering_result[0] = 1
@@ -178,7 +217,7 @@ class ClipFilter:
             return False
         self.filtering_result[2] = 1
 
-        if self.is_pulpil_missing(threshold):
+        if self.is_pulpil_missing(ratio):
             self.msg = 'There are too many missing pulpils.'
             return False
         self.filtering_result[3] = 1
@@ -187,6 +226,12 @@ class ClipFilter:
             self.msg = 'Can be considered there are more than a person.'
             return False
         self.filtering_result[4] = 1
+
+        if self.is_landmarks_too_small(ratio, threshold):
+            self.msg = 'Detected face is too small.'
+            return False
+        self.filtering_result[5] = 1
+        
 
         self.msg = 'Pass.'
         return True

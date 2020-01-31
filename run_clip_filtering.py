@@ -20,9 +20,9 @@ def run_filtering(scene_data, landmark_wrapper, video_wrapper, opt):
         clip_filter = ClipFilter(vid=video_wrapper.get_vid(),
                                 start_frame=start_frame,
                                 end_frame=end_frame,
-                                landmarks=landmarks_chuck,
-                                threshold=opt.threshold)
-        is_correct_clip = clip_filter.is_correct_clip(0.5)
+                                landmarks=landmarks_chuck)
+
+        is_correct_clip = clip_filter.is_correct_clip(opt.ratio, opt.threshold)
         filtering_result, debug_info, msg = clip_filter.get_filter_variable()
         
         # save all clipping info
@@ -50,14 +50,13 @@ def main():
     parser.add_argument('-clip_filter_path', default='./filtered_clips')
 
     parser.add_argument('-threshold', default=100)
+    parser.add_argument('-ratio', default=0.5)
     parser.add_argument('-is_test', type=bool, default=True)
     opt = parser.parse_args()
     
-    skip_flag = False
-
     for pickle_path in tqdm(sorted(glob.glob(opt.landmarks_path + '/*.pickle'), key=os.path.getmtime)):
         vid_name = os.path.split(pickle_path)[1][:-7]
-        tqdm.write(vid_name)
+        tqdm.write('Current video: {}'.format(vid_name))
 
         # make directory
         if not(os.path.exists(opt.clip_filter_path)):
@@ -70,9 +69,9 @@ def main():
             landmark_data = LandmarkWrapper(opt.landmarks_path, vid_name)
 
             filtered_clips, _ = run_filtering(scene_data=scene_data,
-                                                    landmark_wrapper=landmark_data,
-                                                    video_wrapper=vid_data,
-                                                    opt=opt)
+                                            landmark_wrapper=landmark_data,
+                                            video_wrapper=vid_data,
+                                            opt=opt)
         
         # save files
         with open('{}/{}-filtered.pickle'.format(opt.clip_filter_path, vid_name), 'wb') as cf:
