@@ -16,9 +16,12 @@ def main():
     parser.add_argument('-vid_path', default='./videos')
     parser.add_argument('-facial_keypoints', default='./facial_keypoints')
     parser.add_argument('-model_path', default='./model/shape_predictor_68_face_landmarks.dat')
+    
     parser.add_argument('-width', default=960)
     parser.add_argument('-height', default=540)
     parser.add_argument('-frame_threshold', type=int, default=300)
+    parser.add_argument('-vid_idx_from', default=0)
+    
     opt = parser.parse_args()
 
     calibration = Calibration()
@@ -30,6 +33,10 @@ def main():
     print('[INFO] Total number of videos: {}'.format(str(len(videos))))
     
     for i, fp in tqdm(enumerate(sorted(videos, key=os.path.getmtime))):
+        
+        if opt.vid_idx_from >= i: # extract landmarks from input vid idx
+            continue
+        
         sys.stdout.write('\t{}/{}'.format(i+1, str(len(videos))))
         vid_name = os.path.split(fp)[1][-15:-4]
         print('\n\tCurrent Video: {}'.format(vid_name))

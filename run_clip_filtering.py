@@ -5,7 +5,7 @@ import csv
 import pandas as pd
 import pickle
 
-from tqdm import tqdm
+from tqdm import tqdm_gui
 from data_utils import VideoWrapper, LandmarkWrapper, ClipFilter
 
 
@@ -54,9 +54,9 @@ def main():
     parser.add_argument('-is_test', type=bool, default=True)
     opt = parser.parse_args()
     
-    for pickle_path in tqdm(sorted(glob.glob(opt.landmarks_path + '/*.pickle'), key=os.path.getmtime)):
+    for pickle_path in tqdm_gui(sorted(glob.glob(opt.landmarks_path + '/*.pickle'), key=os.path.getmtime)):
         vid_name = os.path.split(pickle_path)[1][:-7]
-        tqdm.write('Current video: {}'.format(vid_name))
+        print('[INFO] Current video: {}'.format(vid_name))
 
         # make directory
         if not(os.path.exists(opt.clip_filter_path)):
