@@ -20,6 +20,7 @@ def main():
     parser.add_argument('-max_result', default=50)
     parser.add_argument('-lang', default='en')
     parser.add_argument('-dev_key', default='')
+    parser.add_argument('-vid_idx', default=None)
 
     # term option
     parser.add_argument('-search_year', type=int, default=2018)
@@ -80,6 +81,10 @@ def vid_download(vid_list, opt):
     
     with open('download_log.txt', 'w') as log:
         for idx in vid_list:
+            
+            if opt.vid_idx:
+                idx = opt.vid_idx
+
             ydl_opts['outtmpl'] = opt.video_path + '{}.mp4'.format(idx)
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                 download_url = 'https://youtu.be/{}'.format(idx) # video url

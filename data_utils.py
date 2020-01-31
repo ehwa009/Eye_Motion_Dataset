@@ -37,6 +37,10 @@ class SubtitleWrapper:
             print('[WARN] There are more than one subtitle.')
             assert False
         if len(sub_list) == 1:
+            
+            # check wrong subtitle and rewrite vtt files
+            self.do_check(sub_list[0])
+            
             for i, sub_chunk in enumerate(WebVTT().read(sub_list[0])):
                 raw_sub = str(sub_chunk.raw_text)    
                 if raw_sub.find('\n'):
@@ -47,7 +51,7 @@ class SubtitleWrapper:
                 sub_info = {}
                 sent = ''
                 for words_chunk in raw_sub:
-                    words = re.sub('[-\".]', '', words_chunk).split(' ')
+                    words = re.sub(r"[-\".]", '', words_chunk).split(' ')
                     for word in words:
                         sent += word
                         sent += ' '
@@ -61,6 +65,29 @@ class SubtitleWrapper:
         else:
             print('[ERROR] There is no subtitle file for {} video.'.format(self.vid_name))
             return None
+
+    def do_check(self, path):
+        with open(path, 'r') as f:
+            lines = f.readlines()
+
+        with open(path, 'w') as f:
+            for li in range(0, len(lines)):
+                if lines[li].find('<c>') == -1:
+                    if lines[li].find('00:') != -1 and (lines[li+1] == '\n' or lines[li+1] == ' \n'):
+                        f.write('\n')
+                        break
+                    f.write(lines[li])
+
+            
+            
+            
+            # for line in lines:
+            #     if line.find('<c>') == -1:
+            #         if line.find('[Music]') != -1:
+            #             break
+            #         f.write(line)
+
+            
                         
 
 class VideoWrapper:
@@ -111,7 +138,7 @@ class ClipFilter:
         self.vid = vid
 
         self.filtering_result = [0, 0, 0, 0, 0, 0, ] # [landmark_missing, picture, short, pupils, jittering, small]
-        self.debugging_info = [None, None, None, ] # [landmark_missing, picture, pupils, ]
+        self.debugging_info = [None, None, None, None, None, ] # [landmark_missing, picture, pupils, jittering, small]
         self.msg = ''
 
         self.min_scene_length = 30 * 3 # assume 30 fps
@@ -146,8 +173,9 @@ class ClipFilter:
         diff = 0
         n_diff = 0
         for frame, next_frame in zip(frames, frames[1:]):
-            diff += cv2.norm(frame, next_frame, cv2.NORM_L1)
-            n_diff += 1
+            if next_frame is not None:
+                diff += cv2.norm(frame, next_frame, cv2.NORM_L1)
+                n_diff += 1
         diff /= n_diff
         
         self.debugging_info[1] = round(diff, 0)
@@ -169,7 +197,7 @@ class ClipFilter:
 
         return n_incorrect_frame / self.scene_length > ratio
 
-    def is_too_large_jittering(self):
+    def is_too_large_jittering(self): # if there is one more face detected
         sampling_interval = int(math.floor(self.scene_length / 5))
         sampling_frames = list(range(self.start_frame + sampling_interval, 
                                     self.end_frame + sampling_interval + 1,
@@ -184,11 +212,12 @@ class ClipFilter:
         diff = 0
         n_diff = 0
         for frame, next_frame in zip(frames, frames[1:]):
-            diff += cv2.norm(frame, next_frame, cv2.NORM_L1)
-            n_diff += 1
+            if next_frame is not None:
+                diff += cv2.norm(frame, next_frame, cv2.NORM_L1)
+                n_diff += 1
         diff /= n_diff
         
-        self.debugging_info[1] = round(diff, 0)
+        self.debugging_info[3] = round(diff, 0)
 
         return diff > 100000000
 
@@ -199,7 +228,15 @@ class ClipFilter:
             return np.sqrt((x1-x2) ** 2 + (y1- y2) ** 2)
 
         for li, landmark in enumerate(self.landmarks):
-            print('TEST')
+            dist = get_dist(landmark[10], landmark[11], landmark[16], landmark[17])
+            if get_dist(landmark[10], landmark[11], landmark[16], landmark[17]) < threshold:
+                n_incorrect_frame += 1
+        self.debugging_info[4] = round(n_incorrect_frame / self.scene_length, 3)
+        
+        return n_incorrect_frame / self.scene_length > ratio
+
+    def is_side(self):
+        pass
 
     def is_correct_clip(self, ratio, threshold):
         if self.is_landmarks_missing(ratio):

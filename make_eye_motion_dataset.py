@@ -2,9 +2,11 @@ import os
 import glob
 import argparse
 import cv2
+import pickle
 
 from tqdm import tqdm_gui
 from data_utils import VideoWrapper, SubtitleWrapper, ClipWrapper
+
 
 '''
 # Eye motion dataset strucuture
@@ -30,8 +32,8 @@ def make_dataset(opt):
     dataset = []
 
     vid_files = sorted(glob.glob(opt.vid_path + '/*.mp4'), key=os.path.getmtime)
-    # for vi, vid in enumerate(tqdm_gui(vid_files)):
-    for vid in enumerate(vid_files):
+    for vi, vid in enumerate(tqdm_gui(vid_files)):
+    # for vid in enumerate(vid_files):
         vid_name = os.path.split(vid[1])[1][:-4]
         print(vid_name)
 
@@ -86,7 +88,10 @@ def make_dataset(opt):
                                                 'end_frame': end_frame})
 
                 print('[INFO] Current video: {}, start_frame: {}, end_frame: {}'.format(vid_name, start_frame, end_frame))
-        
+    
+    print('[INFO] Writing to pickle.')
+    with open('{}/eye_motion_dataset.pickle'.format(opt.dataset_path), 'wb') as df:
+        pickle.dumps(dataset, df)
 
 def second_to_frame(second, fps):
     return int(round(second * fps))
@@ -97,6 +102,7 @@ def main():
     parser.add_argument('-vid_path', default='./videos')
     parser.add_argument('-facial_keypoints', default='./facial_keypoints')
     parser.add_argument('-clip_filter_path', default='./filtered_clips')
+    parser.add_argument('-dataset_path', default='./dataset')
     parser.add_argument('-sub_lang')
     opt = parser.parse_args()
 

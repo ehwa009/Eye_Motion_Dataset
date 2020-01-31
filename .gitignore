@@ -1,7 +1,9 @@
-videos/*.*
+videos/
 *.ipynb
 *.txt
-clips/*.*
-facial_keypoints/*.*
+clips/
+facial_keypoints/
 *.pyc
 *.json
+filtered_clips/
+dataset/

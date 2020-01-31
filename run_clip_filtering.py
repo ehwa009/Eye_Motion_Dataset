@@ -5,7 +5,7 @@ import csv
 import pandas as pd
 import pickle
 
-from tqdm import tqdm_gui
+from tqdm import tqdm
 from data_utils import VideoWrapper, LandmarkWrapper, ClipFilter
 
 
@@ -49,14 +49,14 @@ def main():
     parser.add_argument('-landmarks_path', default='./facial_keypoints')
     parser.add_argument('-clip_filter_path', default='./filtered_clips')
 
-    parser.add_argument('-threshold', default=100)
-    parser.add_argument('-ratio', default=0.5)
-    parser.add_argument('-is_test', type=bool, default=True)
+    parser.add_argument('-threshold', type=int, default=30)
+    parser.add_argument('-ratio', type=int, default=0.5)
+    parser.add_argument('-is_test', type=bool, default=False)
     opt = parser.parse_args()
     
-    for pickle_path in tqdm_gui(sorted(glob.glob(opt.landmarks_path + '/*.pickle'), key=os.path.getmtime)):
+    for pickle_path in tqdm(sorted(glob.glob(opt.landmarks_path + '/*.pickle'), key=os.path.getmtime)):
         vid_name = os.path.split(pickle_path)[1][:-7]
-        print('[INFO] Current video: {}'.format(vid_name))
+        tqdm.write('[INFO] Current video: {}'.format(vid_name))
 
         # make directory
         if not(os.path.exists(opt.clip_filter_path)):
@@ -73,9 +73,9 @@ def main():
                                             video_wrapper=vid_data,
                                             opt=opt)
         
-        # save files
-        with open('{}/{}-filtered.pickle'.format(opt.clip_filter_path, vid_name), 'wb') as cf:
-            pickle.dump(filtered_clips, cf)
+            # save files
+            with open('{}/{}-filtered.pickle'.format(opt.clip_filter_path, vid_name), 'wb') as cf:
+                pickle.dump(filtered_clips, cf)
 
         if opt.is_test:
             break
