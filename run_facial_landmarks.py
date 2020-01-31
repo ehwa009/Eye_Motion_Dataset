@@ -17,8 +17,8 @@ def main():
     parser.add_argument('-facial_keypoints', default='./facial_keypoints')
     parser.add_argument('-model_path', default='./model/shape_predictor_68_face_landmarks.dat')
     
-    parser.add_argument('-width', default=960)
-    parser.add_argument('-height', default=540)
+    parser.add_argument('-width', type=int, default=960)
+    parser.add_argument('-height', type=int, default=540)
     parser.add_argument('-frame_threshold', type=int, default=300)
     parser.add_argument('-vid_idx_from', type=int, default=0)
     
