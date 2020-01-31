@@ -20,7 +20,7 @@ def main():
     parser.add_argument('-width', default=960)
     parser.add_argument('-height', default=540)
     parser.add_argument('-frame_threshold', type=int, default=300)
-    parser.add_argument('-vid_idx_from', default=0)
+    parser.add_argument('-vid_idx_from', type=int, default=0)
     
     opt = parser.parse_args()
 
