@@ -7,3 +7,6 @@ facial_keypoints/
 *.json
 filtered_clips/
 dataset/
+.DS_Store
+.vscode
+__pycache__

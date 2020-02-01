@@ -69,7 +69,6 @@ class SubtitleWrapper:
     def do_check(self, path):
         with open(path, 'r') as f:
             lines = f.readlines()
-
         with open(path, 'w') as f:
             for li in range(0, len(lines)):
                 if lines[li].find('<c>') == -1:
@@ -77,17 +76,6 @@ class SubtitleWrapper:
                         f.write('\n')
                         break
                     f.write(lines[li])
-
-            
-            
-            
-            # for line in lines:
-            #     if line.find('<c>') == -1:
-            #         if line.find('[Music]') != -1:
-            #             break
-            #         f.write(line)
-
-            
                         
 
 class VideoWrapper:

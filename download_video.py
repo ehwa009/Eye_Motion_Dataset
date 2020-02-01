@@ -21,6 +21,7 @@ def main():
     parser.add_argument('-lang', default='en')
     parser.add_argument('-dev_key', default='')
     parser.add_argument('-vid_idx', default=None)
+    parser.add_argument('-is_only_sub', type=bool, default=False)
 
     # term option
     parser.add_argument('-search_year', type=int, default=2018)
@@ -32,7 +33,7 @@ def main():
     start_date = datetime(opt.search_year, 1, 1, 0, 0, 0)
     target_date = datetime(opt.target_year, 1, 1, 0, 0)
 
-    if not os.path.exists(opt.video_path):
+    if not os.path.exists(opt.video_path): # check the directory exists or not
         os.makedirs(opt.video_path)
 
     # query video indices
@@ -92,8 +93,10 @@ def vid_download(vid_list, opt):
                 
                 if vid_filter(vid_info):
                     try:
-                        # ydl.download([download_url])
-                        print('PASS')
+                        if opt.is_only_sub:
+                            print('[INFO] Skip downloading video.')
+                        else:
+                            ydl.download([download_url])
                     except:
                         print('Error!')
                     else:
