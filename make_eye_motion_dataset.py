@@ -34,7 +34,7 @@ def make_dataset(opt):
     vid_files = sorted(glob.glob(opt.vid_path + '/*.mp4'), key=os.path.getmtime)
     for vi, vid in enumerate(tqdm_gui(vid_files)):
     # for vid in enumerate(vid_files):
-        vid_name = os.path.split(vid[1])[1][:-4]
+        vid_name = os.path.split(vid)[1][:-4]
         print(vid_name)
 
         filtered_clip_wrapper = ClipWrapper(opt.clip_filter_path, vid_name)
