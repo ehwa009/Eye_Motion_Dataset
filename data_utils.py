@@ -75,10 +75,12 @@ class SubtitleWrapper:
                     if lines[li].find('00:') != -1 and (lines[li+1] == '\n' or lines[li+1] == ' \n'):
                         if len(lines[:li]) > len(lines)/2:
                             break
+                    if lines[li] == '[Music]':
+                        pass
                     f.write(lines[li])
 
 if __name__ == '__main__':
-    sub_test_path = './videos/h2wglfIVE0I.vtt'
+    sub_test_path = './videos/ux2jRQo58Os.vtt'
     sub = SubtitleWrapper(os.path.split(sub_test_path)[0], os.path.split(sub_test_path)[1][:-4])
     subtitle = sub.get_subtitle()
                         
