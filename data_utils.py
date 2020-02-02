@@ -73,8 +73,14 @@ class SubtitleWrapper:
             for li in range(0, len(lines)):
                 if lines[li].find('<c>') == -1:
                     if lines[li].find('00:') != -1 and (lines[li+1] == '\n' or lines[li+1] == ' \n'):
-                        f.write('\n')
+                        if len(lines[:li]) > len(lines)/2:
+                            break
                     f.write(lines[li])
+
+if __name__ == '__main__':
+    sub_test_path = './videos/h2wglfIVE0I.vtt'
+    sub = SubtitleWrapper(os.path.split(sub_test_path)[0], os.path.split(sub_test_path)[1][:-4])
+    subtitle = sub.get_subtitle()
                         
 
 class VideoWrapper:
