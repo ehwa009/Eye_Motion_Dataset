@@ -91,7 +91,7 @@ def make_dataset(opt):
     
     print('[INFO] Writing to pickle.')
     with open('{}/eye_motion_dataset.pickle'.format(opt.dataset_path), 'wb') as df:
-        pickle.dumps(dataset, df)
+        pickle.dump(dataset, df)
 
 def second_to_frame(second, fps):
     return int(round(second * fps))

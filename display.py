@@ -2,14 +2,23 @@ import cv2
 import numpy as np
 import argparse
 import pickle
+import glob
+import random
 
 class Display:
 
     def __init__(self, x_lim, y_lim):
         self.x_lim = x_lim
         self.y_lim = y_lim
+
+        # font settig
+        self.font = cv2.FONT_HERSHEY_SIMPLEX
+        self.bottomLeftCornerOfText = (10, 400)
+        self.fontScale = 1
+        self.fontColor = (255,255,255)
+        self.lineType = 2
             
-    def run_display(self, landmarks):
+    def run_display(self, landmarks, text='This is temporary text.', sp=30):
         for landmark in landmarks:
             frame = np.zeros((self.x_lim, self.y_lim, 3), np.uint8)
             
@@ -42,14 +51,35 @@ class Display:
 
             cv2.circle(frame, center_dot, 2, (255, 0, 0), -1)
 
+            # put text
+            cv2.putText(frame, text, 
+                        self.bottomLeftCornerOfText, 
+                        self.font, 
+                        self.fontScale,
+                        self.fontColor,
+                        self.lineType)
+
             cv2.imshow('display', frame)
 
-            if cv2.waitKey(50) & 0xFF == ord('q'):
+            if cv2.waitKey(sp) & 0xFF == ord('q'):
                 break
+
+    def display_dataset(self, dataset_path):
+        with open(dataset_path, 'rb') as f:
+            eye_dataset = pickle.load(f)
+        for ed in eye_dataset:
+            print('[INFO] Current video: {}'.format(ed['vid']))
+            for ci in ed['clip_info']:
+                for sent, landmarks in zip(ci['sent'], ci['landmarks']):
+                    self.run_display(landmarks, sent[2])
 
 
 if __name__ == '__main__':
     d = Display(540, 960) # 960 x 540
-    with open('./facial_keypoints/Xo9J_G1cTsk.pickle', 'rb') as f:
+    facial_data_list = glob.glob('./facial_keypoints/*.pickle')
+    facial_data = random.choice(facial_data_list)
+    with open(facial_data, 'rb') as f:
         landmarks = pickle.load(f)
     d.run_display(landmarks)
+
+    
