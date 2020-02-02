@@ -74,7 +74,6 @@ class SubtitleWrapper:
                 if lines[li].find('<c>') == -1:
                     if lines[li].find('00:') != -1 and (lines[li+1] == '\n' or lines[li+1] == ' \n'):
                         f.write('\n')
-                        break
                     f.write(lines[li])
                         
 
