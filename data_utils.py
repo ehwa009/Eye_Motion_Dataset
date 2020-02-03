@@ -79,33 +79,21 @@ class SubtitleWrapper:
                     continue
                 sub_lines.append(lines[li])
         
-        final = []
+        # final check
+        final = [sub_lines[0], sub_lines[1], sub_lines[2]+'\n']
         for sl in range(0, len(sub_lines), 2):
             if sub_lines[sl].find('00:') != -1:
-                if sub_lines[sl+1] == '\n' or sub_lines[sl+1] == ' \n':
-                    continue
-            try:
-                final.append(sub_lines[sl])
-                final.append(sub_lines[sl+1])
-            except:
-                pass
+                if sub_lines[sl+1] != '\n' or sub_lines[sl+1] != ' \n':
+                    final.append(sub_lines[sl])
+                    final.append(sub_lines[sl+1] + '\n')
         
         with open(path, 'w') as f:
             for filtered_sub in final:
                 f.write(filtered_sub)
-                
-                
-                
-                # if lines[li].find('<c>') == -1:
-                #     if lines[li].find('00:') != -1 and (lines[li+1] == '\n' or lines[li+1] == ' \n'):
-                #         if len(lines[:li]) > len(lines)/2:
-                #             break
-                #     if lines[li] == '[Music]':
-                #         pass
-                #     f.write(lines[li])
+            
 
 if __name__ == '__main__':
-    sub_test_path = './videos/ith_peFapM8.vtt'
+    sub_test_path = './videos/h2wglfIVE0I.vtt'
     sub = SubtitleWrapper(os.path.split(sub_test_path)[0], os.path.split(sub_test_path)[1][:-4])
     subtitle = sub.get_subtitle()
     print(subtitle[:-3])

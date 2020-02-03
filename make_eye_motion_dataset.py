@@ -77,7 +77,6 @@ def make_dataset(opt):
                             # get local index of landmarks list
                             landmark_start_idx = sent_start_frame - start_frame
                             landmark_end_idx = sent_end_frame - start_frame
-                            # landmark_end_idx = end_frame - sent_end_frame
                             clip_landmark_list.append(landmarks[landmark_start_idx:landmark_end_idx])
                         
                 # append clip information

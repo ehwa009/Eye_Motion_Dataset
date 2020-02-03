@@ -7,18 +7,20 @@ import random
 
 class Display:
 
-    def __init__(self, x_lim, y_lim):
+    def __init__(self, x_lim, y_lim, sp=30):
         self.x_lim = x_lim
         self.y_lim = y_lim
+        self.sp = sp
 
         # font settig
         self.font = cv2.FONT_HERSHEY_SIMPLEX
         self.bottomLeftCornerOfText = (10, 400)
+        self.topLeftConnerOfText = (10, 10)
         self.fontScale = 1
         self.fontColor = (255,255,255)
         self.lineType = 2
             
-    def run_display(self, landmarks, text='This is temporary text.', sp=30):
+    def run_display(self, landmarks, text='This is temporary text.', title='TEST'):
         for landmark in landmarks:
             frame = np.zeros((self.x_lim, self.y_lim, 3), np.uint8)
             
@@ -59,9 +61,17 @@ class Display:
                         self.fontColor,
                         self.lineType)
 
+            # put current video text
+            cv2.putText(frame, 'Current_vid: {}'.format(title), 
+                        self.topLeftConnerOfText, 
+                        self.font, 
+                        self.fontScale,
+                        self.fontColor,
+                        self.lineType)
+
             cv2.imshow('display', frame)
 
-            if cv2.waitKey(sp) & 0xFF == ord('q'):
+            if cv2.waitKey(self.sp) & 0xFF == ord('q'):
                 break
 
     def display_dataset(self, dataset_path):
@@ -75,11 +85,15 @@ class Display:
 
 
 if __name__ == '__main__':
-    d = Display(540, 960) # 960 x 540
-    facial_data_list = glob.glob('./facial_keypoints/*.pickle')
-    facial_data = random.choice(facial_data_list)
-    with open(facial_data, 'rb') as f:
-        landmarks = pickle.load(f)
-    d.run_display(landmarks)
+    d = Display(540, 960, sp=10) # 960 x 540
+    
+    # facial_data_list = glob.glob('./facial_keypoints/*.pickle')
+    # facial_data = random.choice(facial_data_list)
+    # with open(facial_data, 'rb') as f:
+    #     landmarks = pickle.load(f)
+    # d.run_display(landmarks)
+
+    dataset = './dataset/eye_motion_dataset.pickle'
+    d.display_dataset(dataset)
 
     
