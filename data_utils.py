@@ -67,22 +67,48 @@ class SubtitleWrapper:
             return None
 
     def do_check(self, path):
+        sub_lines = []
         with open(path, 'r') as f:
             lines = f.readlines()
-        with open(path, 'w') as f:
             for li in range(0, len(lines)):
-                if lines[li].find('<c>') == -1:
-                    if lines[li].find('00:') != -1 and (lines[li+1] == '\n' or lines[li+1] == ' \n'):
-                        if len(lines[:li]) > len(lines)/2:
-                            break
-                    if lines[li] == '[Music]':
-                        pass
-                    f.write(lines[li])
+                if lines[li].find('<c>') != -1:
+                    continue
+                if lines[li] == '[Music]\n' or lines[li] == '[Music]':
+                    continue
+                if lines[li].find('00:') != -1 and (lines[li+1] == '\n' or lines[li+1] == ' \n'):
+                    continue
+                sub_lines.append(lines[li])
+        
+        final = []
+        for sl in range(0, len(sub_lines), 2):
+            if sub_lines[sl].find('00:') != -1:
+                if sub_lines[sl+1] == '\n' or sub_lines[sl+1] == ' \n':
+                    continue
+            try:
+                final.append(sub_lines[sl])
+                final.append(sub_lines[sl+1])
+            except:
+                pass
+        
+        with open(path, 'w') as f:
+            for filtered_sub in final:
+                f.write(filtered_sub)
+                
+                
+                
+                # if lines[li].find('<c>') == -1:
+                #     if lines[li].find('00:') != -1 and (lines[li+1] == '\n' or lines[li+1] == ' \n'):
+                #         if len(lines[:li]) > len(lines)/2:
+                #             break
+                #     if lines[li] == '[Music]':
+                #         pass
+                #     f.write(lines[li])
 
 if __name__ == '__main__':
-    sub_test_path = './videos/ux2jRQo58Os.vtt'
+    sub_test_path = './videos/ith_peFapM8.vtt'
     sub = SubtitleWrapper(os.path.split(sub_test_path)[0], os.path.split(sub_test_path)[1][:-4])
     subtitle = sub.get_subtitle()
+    print(subtitle[:-3])
                         
 
 class VideoWrapper:

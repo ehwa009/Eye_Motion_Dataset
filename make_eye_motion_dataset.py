@@ -69,17 +69,16 @@ def make_dataset(opt):
                 clip_sent_list = []
                 clip_landmark_list = []
                 for sub in subtitle:
-                    sent_start_frame = second_to_frame(sub['start'], fps)
-                    sent_end_frame = second_to_frame(sub['end'], fps)
-                    
-                    if sent_start_frame >= start_frame and sent_end_frame <= end_frame:
-                        clip_sent_list.append([sent_start_frame, sent_end_frame, sub['sent']])
-                        
-                        # get local index of landmarks list
-                        landmark_start_idx = sent_start_frame - start_frame
-                        landmark_end_idx = sent_end_frame - start_frame
-                        # landmark_end_idx = end_frame - sent_end_frame
-                        clip_landmark_list.append(landmarks[landmark_start_idx:landmark_end_idx])
+                    if sub['sent'] != '':
+                        sent_start_frame = second_to_frame(sub['start'], fps)
+                        sent_end_frame = second_to_frame(sub['end'], fps)
+                        if sent_start_frame >= start_frame and sent_end_frame <= end_frame:
+                            clip_sent_list.append([sent_start_frame, sent_end_frame, sub['sent']])
+                            # get local index of landmarks list
+                            landmark_start_idx = sent_start_frame - start_frame
+                            landmark_end_idx = sent_end_frame - start_frame
+                            # landmark_end_idx = end_frame - sent_end_frame
+                            clip_landmark_list.append(landmarks[landmark_start_idx:landmark_end_idx])
                         
                 # append clip information
                 dataset[-1]['clip_info'].append({'sent': clip_sent_list,
@@ -103,7 +102,6 @@ def main():
     parser.add_argument('-facial_keypoints', default='./facial_keypoints')
     parser.add_argument('-clip_filter_path', default='./filtered_clips')
     parser.add_argument('-dataset_path', default='./dataset')
-    parser.add_argument('-sub_lang')
     opt = parser.parse_args()
 
     # make eye motion dataset
