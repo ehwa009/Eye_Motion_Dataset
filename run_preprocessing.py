@@ -1,10 +1,10 @@
 import pickle
 import argparse
-import torch
 import pandas as pd
 import numpy as np
 
-from sklearn.decomposition import PCA
+CENTER_X = int(960 / 2)
+CENTER_Y = int(540 / 2)
 
 def load_data(path, data_size):
     with open(path, 'rb') as f:
@@ -13,7 +13,6 @@ def load_data(path, data_size):
         dataset = data[:data_size]
     else:
         dataset = data[:]
-
     return dataset
 
 
@@ -45,7 +44,18 @@ def main():
                 for landmark in ci_df.values.tolist():    
                     filled = [int(lm) for lm in landmark if not(np.isnan(lm))]
                     if len(filled) == 50:
-                        temp_lm.append(filled)
+                        # relocate center
+                        diff_x = CENTER_X - filled[48]
+                        diff_y = CENTER_Y - filled[49]
+                        for f_i in range(0, len(filled), 2):
+                            filled[f_i] += diff_x
+                            filled[f_i+1] += diff_y
+                        # check right pupil is outside of eye region
+                        condition1 = filled[0] > filled[4] and filled[0] < filled[10]
+                        condition2 = filled[1] > filled[7] and filled[1] > filled[9]
+                        condition3 = filled[1] < filled[13] and filled[1] < filled[14]
+                        if condition1 and condition2 and condition3:
+                            temp_lm.append(filled)
                 filled_landmarks.append(temp_lm)
             clip_info['landmarks'] = filled_landmarks
     
