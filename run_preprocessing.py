@@ -6,8 +6,11 @@ import math
 
 from tqdm import tqdm
 
-CENTER_X = int(960 / 2)
-CENTER_Y = int(540 / 2)
+CENTER_X = int(960 / 3 / 2)
+CENTER_Y = int(540 / 3 / 2)
+
+# CENTER_X = int(100 / 2)
+# CENTER_Y = int(50 / 2)
 
 def load_data(path, data_size):
     with open(path, 'rb') as f:

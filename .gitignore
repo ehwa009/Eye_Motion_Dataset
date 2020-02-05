@@ -1,5 +1,5 @@
 videos/
-*.ipynb
+test.ipynb
 *.txt
 clips/
 facial_keypoints/

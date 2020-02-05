@@ -14,13 +14,15 @@ class Display:
 
         # font settig
         self.font = cv2.FONT_HERSHEY_SIMPLEX
-        self.bottomLeftCornerOfText = (10, 450)
-        self.topLeftConnerOfText = (10, 50)
-        self.fontScale = 1
+        # self.bottomLeftCornerOfText = (10, 450)
+        self.bottomLeftCornerOfText = (int(self.x_lim/54), int(self.y_lim/2))
+        # self.topLeftConnerOfText = (10, 50)
+        self.topLeftConnerOfText = (int(self.x_lim/54), int(self.y_lim/19))
+        self.fontScale = 0.4
         self.fontColor = (255,255,255)
-        self.lineType = 2
+        self.lineType = 1
             
-    def draw_frame(self, landmark, is_center, text='This is temporary text.', title='TEST'):
+    def draw_frame(self, landmark, is_center, text=None, title=None):
         frame = np.zeros((self.x_lim, self.y_lim, 3), np.uint8)
         
         left_eye_region = np.array(list(zip(landmark[4:16:2], landmark[5:16:2])), np.int32)
@@ -32,7 +34,8 @@ class Display:
         right_eyebrow = list(zip(landmark[28:38:2], landmark[29:38:2]))
         left_eyebrow = list(zip(landmark[38:48:2], landmark[39:48:2]))
 
-        center_dot = (landmark[48], landmark[29])
+        if is_center:
+            center_dot = (landmark[48], landmark[29])
 
         cv2.polylines(frame, [left_eye_region], True, (255, 255, 255), 1)
         cv2.polylines(frame, [right_eye_region], True, (255, 255, 255), 1)
@@ -55,20 +58,22 @@ class Display:
             cv2.circle(frame, center_dot, 2, (255, 0, 0), -1)
 
         # put text
-        cv2.putText(frame, text, 
-                    self.bottomLeftCornerOfText, 
-                    self.font, 
-                    self.fontScale,
-                    self.fontColor,
-                    self.lineType)
+        if text:
+            cv2.putText(frame, text, 
+                        self.bottomLeftCornerOfText, 
+                        self.font, 
+                        self.fontScale,
+                        self.fontColor,
+                        self.lineType)
 
         # put current video text
-        cv2.putText(frame, 'Current_vid: {}'.format(title), 
-                    self.topLeftConnerOfText, 
-                    self.font, 
-                    self.fontScale,
-                    self.fontColor,
-                    self.lineType)
+        if title:
+            cv2.putText(frame, 'Current_vid: {}'.format(title), 
+                        self.topLeftConnerOfText, 
+                        self.font, 
+                        self.fontScale,
+                        self.fontColor,
+                        self.lineType)
 
         return frame
 
@@ -89,7 +94,8 @@ class Display:
 
 
 if __name__ == '__main__':
-    d = Display(540, 960, sp=50) # 960 x 540
+    # d = Display(540, 960, sp=50) # 960 x 540
+    d = Display(int(180), int(320), sp=50) # 320 x 180
     
     # facial_data_list = glob.glob('./facial_keypoints/*.pickle')
     # facial_data = random.choice(facial_data_list)
