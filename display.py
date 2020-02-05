@@ -20,7 +20,7 @@ class Display:
         self.fontColor = (255,255,255)
         self.lineType = 2
             
-    def draw_frame(self, landmark, text='This is temporary text.', title='TEST'):
+    def draw_frame(self, landmark, is_center, text='This is temporary text.', title='TEST'):
         frame = np.zeros((self.x_lim, self.y_lim, 3), np.uint8)
         
         left_eye_region = np.array(list(zip(landmark[4:16:2], landmark[5:16:2])), np.int32)
@@ -50,7 +50,9 @@ class Display:
                 break
             cv2.line(frame, item, left_eyebrow[index + 1], (255, 255, 255), 1)
 
-        cv2.circle(frame, center_dot, 2, (255, 0, 0), -1)
+        # draw center dot
+        if is_center:
+            cv2.circle(frame, center_dot, 2, (255, 0, 0), -1)
 
         # put text
         cv2.putText(frame, text, 
@@ -72,7 +74,7 @@ class Display:
 
 
 
-    def display_dataset(self, dataset_path):
+    def display_dataset(self, dataset_path, is_center=True):
         with open(dataset_path, 'rb') as f:
             eye_dataset = pickle.load(f)
         for ed in eye_dataset:
@@ -80,14 +82,14 @@ class Display:
             for ci in ed['clip_info']:
                 for sent, landmarks in zip(ci['sent'], ci['landmarks']):
                     for landmark in landmarks:
-                        frame = self.draw_frame(landmark, sent[2], ed['vid'])
+                        frame = self.draw_frame(landmark, is_center, sent[2], ed['vid'])
                         cv2.imshow('display', frame)
                         if cv2.waitKey(self.sp) & 0xFF == ord('q'):
                             exit(-1)
 
 
 if __name__ == '__main__':
-    d = Display(540, 960, sp=10) # 960 x 540
+    d = Display(540, 960, sp=50) # 960 x 540
     
     # facial_data_list = glob.glob('./facial_keypoints/*.pickle')
     # facial_data = random.choice(facial_data_list)
@@ -97,6 +99,6 @@ if __name__ == '__main__':
 
     # dataset = './dataset/eye_motion_dataset.pickle'
     dataset = './dataset/processed_eye_motion_dataset.pickle'
-    d.display_dataset(dataset)
+    d.display_dataset(dataset, is_center=False)
 
     
