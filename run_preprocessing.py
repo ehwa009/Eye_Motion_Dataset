@@ -5,6 +5,7 @@ import numpy as np
 import math
 
 from tqdm import tqdm
+from sklearn import decomposition
 
 CENTER_X = int(960 / 3 / 2)
 CENTER_Y = int(540 / 3 / 2)
@@ -12,10 +13,10 @@ CENTER_Y = int(540 / 3 / 2)
 # CENTER_X = int(100 / 2)
 # CENTER_Y = int(50 / 2)
 
-def load_data(path, data_size):
+def load_data(path, data_size=None):
     with open(path, 'rb') as f:
         data = pickle.load(f)
-    if data_size < len(data):
+    if data_size != -1:
         dataset = data[:data_size]
     else:
         dataset = data[:]
@@ -25,6 +26,7 @@ def load_data(path, data_size):
 def save_data(path, data):
     with open(path, 'wb') as f:
         pickle.dump(data, f)
+
 
 '''
 filling empty coordination, 
@@ -63,6 +65,7 @@ def run_fill_filter(eye_dataset):
             clip_info['landmarks'] = filled_landmarks
     
     return eye_dataset
+
 
 def run_normalization(eye_dataset):
     eb_standard_len = 100
@@ -114,26 +117,80 @@ def run_normalization(eye_dataset):
     return eye_dataset
 
 
+def run_estimator(eye_dataset, opt):
+    landmark_list = []
+    for ed in eye_dataset:
+        for clip_info in ed['clip_info']:
+            for clip_landmarks in clip_info['landmarks']:
+                for landmarks in clip_landmarks:
+                    landmark_list.append(landmarks)
+
+    landmark_array = np.array(landmark_list)
+    n_samples, n_features = landmark_array.shape
+    print('[INFO] n_samples:{}, n_features:{}'.format(n_samples, n_features))
+    print('[INFO] Estimated running time: {:0.2f} hrs'.format(n_samples/opt.fps/60/60))
+
+    data = landmark_array[:, :-2]
+    estimator = decomposition.PCA(opt.n_components, svd_solver='randomized', whiten=True)
+    estimator.fit(data)
+    var_ratio = estimator.explained_variance_ratio_
+    print('[INFO] {} number of components explain {:0.2f} of original dataset.'.format(opt.n_components, np.sum(var_ratio)))
+    print('[INFO] Without first and seconde axis, pca explains {:0.2f} of original dataset'.format(np.sum(var_ratio[3:])))
+    
+    return estimator
+
+
+def run_transform(eye_dataset, estimator, opt):
+    for ed in tqdm(eye_dataset):
+        for clip_info in ed['clip_info']:
+            landmarks = clip_info['landmarks']
+            transformed_landmarks = []
+            for landmark in landmarks:
+                tmp_trans = []
+                for lm in landmark:
+                    transformed_array = estimator.transform(np.array([lm[:-2]]))
+                    transformed_list = transformed_array.tolist()[0]
+                    if opt.is_rotation_killed: # we killed pca hyperplanes which have a rotation
+                        transformed_list[0] = 0
+                        transformed_list[1] = 0
+                    tmp_trans.append(transformed_list)
+                transformed_landmarks.append(tmp_trans)
+            clip_info['landmarks'] = transformed_landmarks
+    
+    return eye_dataset
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-dataset_path', default='./dataset')
-    parser.add_argument('-data_size', type=int, default=10)
+    parser.add_argument('-data_size', type=int, default=-1) # -1 means whole dataset
+    parser.add_argument('-fps', type=int, default=10)
+    parser.add_argument('-n_components', type=int, default=7)
+    parser.add_argument('-is_rotation_killed', type=bool, default=True)
+
     opt = parser.parse_args()
 
     eye_dataset = load_data('{}/eye_motion_dataset.pickle'.format(opt.dataset_path), opt.data_size)
     print('[INFO] Dataset length: {}'.format(len(eye_dataset)))
     
-    print('[INFO] filling and filtering is now processing.')
+    print('[INFO] Filling, filtering and centering is now processing.')
     eye_dataset = run_fill_filter(eye_dataset)
 
     print('[INFO] Normalization is now processing.')
     eye_dataset = run_normalization(eye_dataset)
+
+    print('[INFO] Estimator is now running.')
+    estimator = run_estimator(eye_dataset, opt)
+
+    print('[INFO] Landmarks are now transforming.')
+    eye_dataset = run_transform(eye_dataset, estimator, opt)
     
     # save processed dataset
+    processed_dataset = {'eye_dataset': eye_dataset,
+                        'estimator': estimator}
     save_path = '{}/processed_eye_motion_dataset.pickle'.format(opt.dataset_path)
     print('[INFO] Save preprocessed dataset at {}'.format(save_path))
-    save_data(save_path, eye_dataset)
+    save_data(save_path, processed_dataset)
     
 
 if __name__ == '__main__':

@@ -54,8 +54,8 @@ def main():
     parser.add_argument('-is_test', type=bool, default=False)
     opt = parser.parse_args()
     
-    for pickle_path in tqdm(sorted(glob.glob(opt.landmarks_path + '/*.pickle'), key=os.path.getmtime)):
-        vid_name = os.path.split(pickle_path)[1][:-7]
+    for vid_path in tqdm(sorted(glob.glob(opt.vid_path + '/*.mp4'), key=os.path.getmtime)):
+        vid_name = os.path.split(vid_path)[1][:-4]
         tqdm.write('[INFO] Current video: {}'.format(vid_name))
 
         # make directory
