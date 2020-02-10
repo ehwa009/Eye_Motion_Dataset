@@ -10,8 +10,9 @@ from sklearn import decomposition
 CENTER_X = int(960 / 3 / 2)
 CENTER_Y = int(540 / 3 / 2)
 
-# CENTER_X = int(100 / 2)
-# CENTER_Y = int(50 / 2)
+# CENTER_X = 0
+# CENTER_Y = 0
+
 
 def load_data(path, data_size=None):
     with open(path, 'rb') as f:
@@ -49,7 +50,7 @@ def run_fill_filter(eye_dataset):
                 for landmark in ci_df.values.tolist():    
                     filled = [int(lm) for lm in landmark if not(np.isnan(lm))]
                     if len(filled) == 50:
-                        # relocate center
+                        # centering
                         diff_x = CENTER_X - filled[48]
                         diff_y = CENTER_Y - filled[49]
                         for f_i in range(0, len(filled), 2):
@@ -67,6 +68,10 @@ def run_fill_filter(eye_dataset):
     return eye_dataset
 
 
+'''
+Normalize eye expression motion scale over whole dataset.
+To avoid pulpil dislocation, we use same vector on right and left pulpil.
+'''
 def run_normalization(eye_dataset):
     eb_standard_len = 100
 
@@ -117,6 +122,10 @@ def run_normalization(eye_dataset):
     return eye_dataset
 
 
+'''
+Run PCA.
+We set 7 components to run pca.
+'''
 def run_estimator(eye_dataset, opt):
     landmark_list = []
     for ed in eye_dataset:
@@ -135,11 +144,17 @@ def run_estimator(eye_dataset, opt):
     estimator.fit(data)
     var_ratio = estimator.explained_variance_ratio_
     print('[INFO] {} number of components explain {:0.2f} of original dataset.'.format(opt.n_components, np.sum(var_ratio)))
-    print('[INFO] Without first and seconde axis, pca explains {:0.2f} of original dataset'.format(np.sum(var_ratio[3:])))
+    print('[INFO] Without first and seconde axis, rest of hyperplain consists of {:0.2f} of original dataset.'.format(np.sum(var_ratio[3:])))
     
     return estimator
 
 
+'''
+Based on learned PCA eigen vectors (7 hyperplanes that can explain original dataset),
+We transform 50 dimention to 7 dimention to represent eye expression.
+Due to first and second egien vectors represent rotating motion in our pca space,
+we make these values to zero.
+'''
 def run_transform(eye_dataset, estimator, opt):
     for ed in tqdm(eye_dataset):
         for clip_info in ed['clip_info']:
@@ -151,6 +166,8 @@ def run_transform(eye_dataset, estimator, opt):
                     transformed_array = estimator.transform(np.array([lm[:-2]]))
                     transformed_list = transformed_array.tolist()[0]
                     if opt.is_rotation_killed: # we killed pca hyperplanes which have a rotation
+                        # transformed_list[0] = int(transformed_list[0]/3)
+                        # transformed_list[1] = int(transformed_list[1]/3)
                         transformed_list[0] = 0
                         transformed_list[1] = 0
                     tmp_trans.append(transformed_list)
