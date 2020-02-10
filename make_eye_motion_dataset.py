@@ -3,6 +3,7 @@ import glob
 import argparse
 import cv2
 import pickle
+import numpy as np
 
 from tqdm import tqdm_gui
 from data_utils import VideoWrapper, SubtitleWrapper, ClipWrapper
@@ -87,12 +88,30 @@ def make_dataset(opt):
 
                 print('[INFO] Current video: {}, start_frame: {}, end_frame: {}'.format(vid_name, start_frame, end_frame))
     
+    count_landmarks(dataset)
+    
     print('[INFO] Writing to pickle.')
     with open('{}/eye_motion_dataset.pickle'.format(opt.dataset_path), 'wb') as df:
         pickle.dump(dataset, df)
 
 def second_to_frame(second, fps):
     return int(round(second * fps))
+
+
+def count_landmarks(dataset):
+    landmark_list = []
+    for data in dataset:
+        clip_info = data['clip_info']
+        for c_info in clip_info:
+            c_landmarks = c_info['landmarks']
+            for landmarks in c_landmarks:
+                for lm in landmarks:
+                    landmark_list.append(lm)
+
+    landmark_array = np.array(landmark_list)
+    n_samples, n_features = landmark_array.shape
+    print('[INFO] n_samples:{}, n_features:{}'.format(n_samples, n_features))
+    # print('[INFO] Estimated running time: {:0.2f} hrs'.format(n_samples/opt.fps/60/60))
 
 
 def main():

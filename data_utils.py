@@ -37,17 +37,19 @@ class SubtitleWrapper:
             print('[WARN] There are more than one subtitle.')
             assert False
         if len(sub_list) == 1:
-            
             # check wrong subtitle and rewrite vtt files
-            self.do_check(sub_list[0])
-            
-            for i, sub_chunk in enumerate(WebVTT().read(sub_list[0])):
+            try:
+                sub_inst = WebVTT().read(sub_list[0])
+            except:
+                self.do_check(sub_list[0])
+                sub_inst = WebVTT().read(sub_list[0])
+            # iterate subtitle instance
+            for i, sub_chunk in enumerate(sub_inst):
                 raw_sub = str(sub_chunk.raw_text)    
                 if raw_sub.find('\n'):
                     raw_sub = raw_sub.split('\n')
                 else:
                     raw_sub = [raw_sub]
-
                 sub_info = {}
                 sent = ''
                 for words_chunk in raw_sub:
@@ -55,11 +57,9 @@ class SubtitleWrapper:
                     for word in words:
                         sent += word
                         sent += ' '
-
                     sub_info['sent'] = sent.strip(' ')
                     sub_info['start'] = sub_chunk.start_in_seconds
                     sub_info['end'] = sub_chunk.end_in_seconds
-                
                 subtitle.append(sub_info)
             return subtitle
         else:
@@ -93,6 +93,7 @@ class SubtitleWrapper:
             
 
 if __name__ == '__main__':
+    # sub_test_path = './videos/Xo9J_G1cTsk.vtt'
     sub_test_path = './videos/h2wglfIVE0I.vtt'
     sub = SubtitleWrapper(os.path.split(sub_test_path)[0], os.path.split(sub_test_path)[1][:-4])
     subtitle = sub.get_subtitle()
