@@ -137,7 +137,7 @@ def run_estimator(eye_dataset, opt):
     landmark_array = np.array(landmark_list)
     n_samples, n_features = landmark_array.shape
     print('[INFO] n_samples:{}, n_features:{}'.format(n_samples, n_features))
-    print('[INFO] Estimated running time: {:0.2f} hrs'.format(n_samples/opt.fps/60/60))
+    print('[INFO] Estimated running time: {:0.2f} hrs with {} fps'.format(n_samples/opt.fps/60/60, opt.fps))
 
     data = landmark_array[:, :-2]
     estimator = decomposition.PCA(opt.n_components, svd_solver='randomized', whiten=True)
@@ -204,8 +204,9 @@ def main():
     
     # save processed dataset
     processed_dataset = {'eye_dataset': eye_dataset,
-                        'estimator': estimator}
-    save_path = '{}/processed_eye_motion_dataset.pickle'.format(opt.dataset_path)
+                        'estimator': estimator,
+                        }
+    save_path = '{}/processed_eye_motion_dataset_pca_{}.pickle'.format(opt.dataset_path, estimator.n_components)
     print('[INFO] Save preprocessed dataset at {}'.format(save_path))
     save_data(save_path, processed_dataset)
     

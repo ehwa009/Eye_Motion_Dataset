@@ -105,7 +105,7 @@ class Display:
 
 if __name__ == '__main__':
     # d = Display(540, 960, sp=50) # 960 x 540
-    d = Display(180, 320, sp=50) # 320 x 180
+    d = Display(180, 320, sp=30) # 320 x 180
     
     # facial_data_list = glob.glob('./facial_keypoints/*.pickle')
     # facial_data = random.choice(facial_data_list)
