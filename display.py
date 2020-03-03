@@ -89,17 +89,29 @@ class Display:
         eye_dataset = dataset['eye_dataset']
         estimator = dataset['estimator']
 
-        for ed in eye_dataset:
-            print('[INFO] Current video: {}'.format(ed['vid']))
-            for ci in ed['clip_info']:
+        # for ed in eye_dataset:
+        #     print('[INFO] Current video: {}'.format(ed['vid']))
+        #     for ci in ed['clip_info']:
+        #         for sent, landmarks in zip(ci['sent'], ci['landmarks']):
+        #             for landmark in landmarks:
+        #                 transformed = estimator.inverse_transform(np.array([landmark]))
+        #                 transformed = [int(trans) for trans in transformed.tolist()[0]]
+        #                 frame = self.draw_frame(transformed, is_center, sent[2], ed['vid'])
+        #                 cv2.imshow('display', frame)
+        #                 if cv2.waitKey(self.sp) & 0xFF == ord('q'):
+        #                     break
+
+        for i in range(len(eye_dataset)):
+            video = random.choice(eye_dataset)
+            for ci in video['clip_info']:
                 for sent, landmarks in zip(ci['sent'], ci['landmarks']):
                     for landmark in landmarks:
                         transformed = estimator.inverse_transform(np.array([landmark]))
                         transformed = [int(trans) for trans in transformed.tolist()[0]]
-                        frame = self.draw_frame(transformed, is_center, sent[2], ed['vid'])
+                        frame = self.draw_frame(transformed, is_center, sent[2], video['vid'])
                         cv2.imshow('display', frame)
                         if cv2.waitKey(self.sp) & 0xFF == ord('q'):
-                            exit(-1)
+                            break
 
 
 
@@ -113,8 +125,8 @@ if __name__ == '__main__':
     #     landmarks = pickle.load(f)
     # d.run_display(landmarks)
 
-    # dataset = './dataset/eye_motion_dataset.pickle'
-    dataset = './dataset/processed_eye_motion_dataset.pickle'
+    # dataset = './dataset/processed_eye_motion_dataset.pickle'
+    dataset = './dataset/processed_eye_motion_dataset_pca_7.pickle'
     # d.display_dataset(dataset, is_center=False)
     d.display_processed_dataset(dataset)
 
