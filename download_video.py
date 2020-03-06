@@ -17,21 +17,21 @@ def main():
 
     parser.add_argument('-video_path', default='./videos/')
     parser.add_argument('-youtube_ch_id', default='UC_0NfufarVw04vDfWFm8z_Q')
-    parser.add_argument('-max_result', default=50)
+    parser.add_argument('-max_result', type=int, default=50)
     parser.add_argument('-lang', default='en')
     parser.add_argument('-dev_key', default='')
     parser.add_argument('-vid_idx', default=None)
     parser.add_argument('-is_only_sub', type=bool, default=False)
 
     # term option
-    parser.add_argument('-search_year', type=int, default=2018)
-    parser.add_argument('-target_year', type=int, default=2019)
+    parser.add_argument('-year_from', type=int, default=2018)
+    parser.add_argument('-year_to', type=int, default=2019)
     parser.add_argument('-a_month_only', default=False)
     
     opt = parser.parse_args()
 
-    start_date = datetime(opt.search_year, 1, 1, 0, 0, 0)
-    target_date = datetime(opt.target_year, 1, 1, 0, 0)
+    start_date = datetime(opt.year_from, 1, 1, 0, 0, 0)
+    target_date = datetime(opt.year_to, 1, 1, 0, 0)
 
     if not os.path.exists(opt.video_path): # check the directory exists or not
         os.makedirs(opt.video_path)
