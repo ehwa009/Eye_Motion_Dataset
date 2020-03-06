@@ -18,7 +18,8 @@ If you have any qeustions or comments, please feel free to contact me by email (
 - webvtt
 
 ## Usage
-Before you run python code below, please make directories: /videos, /facial_keypoints, /clips, 
+Before you run python code below, please make sure have following folders in your directory: 
+/videos, /facial_keypoints, /clips, /dataset, /filtered_clips
 
 ### 1. Download videos from youtube.
 ```bash
